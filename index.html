@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+	<meta name="descrition" content="A single page Angular JS notes app for demo purpose by dstartupkid - All client side code, no server side scripting">
+	<meta name="author" content="dstartupkid">
+	
+	<title>My Notes | Angular SPA</title>
+	
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<link rel="stylesheet" href="//code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+	<link rel="stylesheet" href="css/custom-style.css">
+	<link rel="stylesheet" href="css/font-awesome.css" type="text/css">
+	<link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+	<script src="js/angular.min.js"></script>
+</head>
+<body ng-app="myNotesApp" ng-controller="myNotesAppController">
+
+	<!--navigation-->
+	<nav class="clearfix">
+		<ul class="clearfix">
+			<li><a class="title">My Notes App</a></li>
+			<li><a href="#"><input type="checkbox" ng-click="includePriority('critical')"> Critical</a></li>
+			<li><a href="#"><input type="checkbox" ng-click="includePriority('imp')"> Important</a></li>
+			<li><a href="#"><input type="checkbox" ng-click="includePriority('trivial')"> Trivial</a></li>
+		</ul>
+		<a href="#" id="pull">My Notes App</a>
+	</nav>
+	<!--/navigation-->
+	
+	<div class="container">
+		<div class="row">
+		
+		<!--Right Panel (TAKEN FIRST AND PULLED TO RIGHT IN ORDER TO MAINTAIN UPPER POSITOIN IN MOBILE RESPONSIVENESS)-->
+		<div class="col-md-3 right-panel pull-right">
+			<div class="notes-bunch" id="critical-notes-bunch">
+				<br/>
+				<div class="alert alert-danger"><i class="fa fa-dot-circle-o"></i> Critical Notes</div>
+				<ul style="margin-left: -35px; margin-top: -10px; margin-bottom: 20px;">
+					<li ng-repeat="miniNote in notesList | limitTo: LimitC" ng-if="miniNote.priority == 'critical'">
+						<div>
+						<i class="fa fa-folder-open-o"></i><a ng-click="miniNote.minimize=false" style="cursor: pointer"> <span class="notetitle" ng-bind="miniNote.title"></span></a><a href="" class="pull-right">&times;</a>
+						</div>
+					</li>
+					<a style="color: gray" ng-click="setLimitC()"><i class="fa fa-2x fa-ellipsis-h"></i></a>
+				</ul>
+			</div>
+			<div class="notes-bunch" id="important-notes-bunch">
+				<br/>
+				<div class="alert alert-warning"><i class="fa fa-dot-circle-o"></i> Important Notes</div>
+				<ul style="margin-left: -35px; margin-top: -10px; margin-bottom: 20px;">
+					<li ng-repeat="miniNote in notesList | limitTo: LimitI" ng-if="miniNote.priority == 'imp'">
+						<div>
+						<i class="fa fa-folder-open-o"></i><a ng-click="miniNote.minimize=false" style="cursor: pointer"> <span class="notetitle" ng-bind="miniNote.title"></span></a><a href="" class="pull-right">&times;</a>
+						</div>
+					</li>
+					<a style="color: gray" ng-click="setLimitI()"><i class="fa fa-2x fa-ellipsis-h"></i></a>
+				</ul>
+			</div>
+			<div class="notes-bunch" id="trivial-notes-bunch">
+				<br/>
+				<div class="alert alert-success"><i class="fa fa-dot-circle-o"></i> Trivial Notes</div>
+				<ul style="margin-left: -35px; margin-top: -10px; margin-bottom: 20px;">
+					<li ng-repeat="miniNote in notesList | limitTo: LimitT" ng-if="miniNote.priority == 'trivial'">
+						<div>
+						<i class="fa fa-folder-open-o"></i><a ng-click="miniNote.minimize=false" style="cursor: pointer"> <span class="notetitle" ng-bind="miniNote.title"></span></a><a href="" class="pull-right">&times;</a>
+						</div>
+					</li>
+					<a style="color: gray" ng-click="setLimitT()"><i class="fa fa-2x fa-ellipsis-h"></i></a>
+				</ul>
+			</div>
+		</div>
+		<!--/Right Panel-->
+
+		<!--Left Panel-->
+		<div class="col-md-9 left-panel pull-left">
+
+			<div ng-repeat="note in notesList | filter: priority | filter: searchstring">
+				<div class="col-md-3 single-note" style="margin:3px" ng-hide="note.minimize">
+					<div class="note-title" style="margin-left: 30px"><i class="fa fa-2x fa-paperclip" style="position:absolute; left:5px; top:5px"></i>
+						<b ng-bind="note.title"></b>
+					</div>
+					<div class="description" style="margin-left: 30px; text-align: justify" ng-bind="note.description"></div>
+					<div class="note-footer" style="margin-left: 30px; margin-bottom: 2px">
+						
+						<span><img ng-src="{{ note.priority == 'imp' && 'img/imp.png' || ( note.priority == 'trivial' && 'img/trivial.png' || 'img/critical.png' )}}" /><!--<i class="fa fa-2x fa-dot-circle-o"></i>--></span>
+						<div class="pull-right">
+							<button class="btn btn-sm btn-default minimize" style="border-radius: 100%" ng-click="note.minimize = true"><i class="fa fa-minus"></i></button>
+							<button class="btn btn-sm btn-default" style="border-radius: 100%" data-toggle='modal' data-target='#editNoteModal' ng-click="editNote(note.id)"><i class="fa fa-pencil"></i></button>
+							<button class="btn btn-sm btn-default" style="border-radius: 100%" ng-click="removeNote(note.id)"><i class="fa fa-trash-o"></i></button>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!--Edit Note Modal-->
+				<div class='modal fade' id='editNoteModal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+                  		<div class='modal-dialog'>
+                  			<div class='modal-content text-center' style="font-family: Segoe UI">
+                  				<div class='modal-header'>
+                  					<button type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button>
+                  					<h4 class='modal-title' id='myModalLabel'>Edit Note Details</h4>
+                  				</div>
+                  				<div class='modal-body' style="font-size: 14px">
+
+                  			<form ng-submit="updateNote()">
+                  				<input type="text" ng-model="noteInputTitle" placeholder="Enter Title" size="40" required="required">
+                  				<br/><br/>
+                  				<textarea ng-model="noteInputDesc" placeholder="Enter Description" cols="41" rows="5" required="required"></textarea>
+                  				<br/><br/>
+                  				<input type="radio" name="noteInputPriority" ng-model="noteInputPriority" value="trivial" checked required="required"> Trivial
+                  				<input type="radio" name="noteInputPriority" ng-model="noteInputPriority" value="imp" required="required"> Important
+                  				<input type="radio" name="noteInputPriority" ng-model="noteInputPriority" value="critical" required="required"> Critical
+                  				</div>
+                  				<div class='modal-footer'>
+                  				<input type='submit' id="editNote" class='btn btn-success' value="Edit Note">
+                  				<button type='button' id="cancelNote2" class='btn btn-default' data-dismiss='modal'>Cancel</button>
+                  			</form>
+
+                  				</div>
+                  			</div>
+                  		</div>
+                  	</div>
+			<!--/Edit Note Modal-->
+
+
+			<div class="add-note">
+				<input type="text" class="search-box" ng-model="searchstring">
+				<i class="fa fa-search search-icon"></i>
+				<button class="btn btn-lg btn-success add-note-button" data-toggle='modal' data-target='#addNoteModal'><i class="fa fa-2x fa-plus"></i></button>
+
+					<!--Add Note Modal-->
+					<div class='modal fade' id='addNoteModal' tabindex='-1' role='dialog' aria-labelledby='myModalLabel' aria-hidden='true'>
+                  		<div class='modal-dialog'>
+                  			<div class='modal-content text-center' style="font-family: Segoe UI">
+                  				<div class='modal-header'>
+                  					<button type='button' class='close' data-dismiss='modal' aria-label='Close'><span aria-hidden='true'>&times;</span></button>
+                  					<h4 class='modal-title' id='myModalLabel'>Enter Note Details</h4>
+                  				</div>
+                  				<div class='modal-body' style="font-size: 14px">
+
+                  			<form ng-submit="addNote()">
+                  				<input type="text" ng-model="noteInputTitle" placeholder="Enter Title" size="40" required="required">
+                  				<br/><br/>
+                  				<textarea ng-model="noteInputDesc" placeholder="Enter Description" cols="41" rows="5" required="required"></textarea>
+                  				<br/><br/>
+                  				<input type="radio" name="noteInputPriority" ng-model="noteInputPriority" value="trivial" checked required="required"> Trivial
+                  				<input type="radio" name="noteInputPriority" ng-model="noteInputPriority" value="imp" required="required"> Important
+                  				<input type="radio" name="noteInputPriority" ng-model="noteInputPriority" value="critical" required="required"> Critical
+                  				</div>
+                  				<div class='modal-footer'>
+                  				<input type='submit' id="addNote" class='btn btn-success' value="Add Note">
+                  				<button type='button' id="cancelNote" class='btn btn-default' data-dismiss='modal'>Cancel</button>
+                  			</form>
+
+                  				</div>
+                  			</div>
+                  		</div>
+                  	</div>
+                  	<!--/Add Note Modal-->
+			</div>
+
+		</div>
+		<!--/Left Panel-->
+
+		
+		
+		</div>
+	</div>
+
+	<script src="myApp.js"></script>
+	<script src="myCtrl.js"></script>
+	<script></script>
+	<script src="js/jquery.js"></script>
+	<script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+	<script src="js/bootstrap.js"></script>
+	<script src="js/custom-javascript.js"></script>
+	<script>
+		$(function() {
+			$('.single-note').draggable({ containment: ".left-panel", zIndex: 9999, scroll: false});
+		});
+	</script>
+	<script>
+	function runEffect(id) {
+				var options = {};
+				alert('u');
+			};
+
+	</script>
+</body>
+</html>
